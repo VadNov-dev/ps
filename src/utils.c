@@ -106,8 +106,9 @@ int field_u64(const char *s, uint64_t *out) {
     if (!s || !*s) return -1;
     char *end;
     errno = 0;
-    *out = strtoumax(s, &end, 10);
+    uintmax_t value  = strtoumax(s, &end, 10);
     if (errno || end == s || *end != '\0') return -1;
+    *out = (uint64_t)value;
     return 0;
 }
 
@@ -115,7 +116,8 @@ int field_i64(const char *s, int64_t *out) {
     if (!s || !*s) return -1;
     char *end;
     errno = 0;
-    *out = strtoimax(s, &end, 10);
+    intmax_t value = strtoimax(s, &end, 10);
     if (errno || end == s || *end != '\0') return -1;
+    *out = (int64_t)value;
     return 0;
 }

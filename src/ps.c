@@ -21,11 +21,10 @@ static double uptimeSeconds = 0;
 static int isCorrectDirectory(char *path, char *name);
 static long getTotalMemory();
 static double getProcUptime();
-static int getPsInfo(proc* ps1);
 int field_u64(const char *s, uint64_t *out);
 int field_i64(const char *s, int64_t *out);
 
-int getPsInfo(proc* ps) {
+static int getPsInfo(proc* ps) {
     char path[256];
     snprintf(path, sizeof(path), "%s/%d/%s", procDir, ps->pid, status);
     FILE* psFile = fopen(path, "r");
@@ -65,7 +64,9 @@ int getPsInfo(proc* ps) {
     }
 
     for (int j = 0; j < 50; j++) {
-        if (token[j] == NULL) return -1;
+        if (token[j] == NULL) {
+            return -1;
+        }
     }
 
     ps->state = token[0][0];
@@ -76,8 +77,8 @@ int getPsInfo(proc* ps) {
         field_i64(token[21], &ps->rss)       != 0) {
         return -1;
     }
-    long totalTime = ps->utime + ps->stime;
-    long seconds = uptimeSeconds - (ps->starttime / cpuFreq);
+    double totalTime = (double)(ps->utime + ps->stime);
+    double seconds = uptimeSeconds - (double)(ps->starttime / cpuFreq);
     if(seconds > 0) {
         ps->cpuPercent = 100 * (totalTime / cpuFreq) / seconds;
     } else {
@@ -103,9 +104,24 @@ int getAvailableProcs(procList *pl, options* opt) {
     struct dirent *entry;
     pl->size = 0;
     long totalMemory = getTotalMemory();
+    if(totalMemory < 0) {
+        closedir(dir);
+        err(1, "Failed to get total memory");
+    }
+
     cpuFreq = sysconf(_SC_CLK_TCK);
     pageSize = sysconf(_SC_PAGESIZE);
+    if(cpuFreq <= 0 || pageSize <= 0) {
+        closedir(dir);
+        err(1, "Failed to get system info");
+    }
+
     uptimeSeconds = getProcUptime();
+    if(uptimeSeconds < 0) {
+        closedir(dir);
+        err(1, "Failed to get uptime");
+    }
+
     while ((entry = readdir(dir)) != NULL) {
         char path[512];
         snprintf(path, sizeof(path), "%s/%s", procDir, entry->d_name);
@@ -119,7 +135,9 @@ int getAvailableProcs(procList *pl, options* opt) {
         }
 
         pl->ps[pl->size].pid = atoi(entry->d_name);
-        getPsInfo(&pl->ps[pl->size]);
+        if(getPsInfo(&pl->ps[pl->size]) != 0) {
+            continue;
+        }
         pl->ps[pl->size].memoryPercent = totalMemory > 0 ? (pl->ps[pl->size].rss * 100.) / totalMemory : 0;
         pl->size++;
 

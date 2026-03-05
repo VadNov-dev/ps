@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     if(opt.flags & STRING_RESTRICTION) {
         outputLimit = opt.limits < psList.size ? opt.limits : psList.size;
     } 
-    printf("%-20s, %10s %10s %10s %10s %10s %10s\n", "Name", "PID", "State", "VmRSS(KB)", "VmSize(KB)", "mem %", "CPU %");
+    printf("%-20s %10s %10s %10s %10s %10s %10s\n", "Name", "PID", "State", "VmRSS(KB)", "VmSize(KB)", "mem %", "CPU %");
     for(int i = 0; i<outputLimit; ++i){
         printf("%-20.20s %10d %10c %10" PRId64 " %10" PRIu64 " %10.1f%% %10.1f%%\n",
                psList.ps[i].comm,
