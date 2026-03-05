@@ -1,12 +1,14 @@
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <inttypes.h>
 #include "ps.h"
 
 
 int cmpByName(const void *a, const void *b) {
     const proc *pa = a;
     const proc *pb = b;
-    return strcoll(pa->name, pb->name);
+    return strcoll(pa->comm, pb->comm);
 }
 
 int cmpByPid(const void *a, const void *b) {
@@ -18,25 +20,25 @@ int cmpByPid(const void *a, const void *b) {
 int cmpByVmRssUp(const void *a, const void *b) {
     const proc *pa = a;
     const proc *pb = b;
-    return (pa->memory.VmRSS > pb->memory.VmRSS) - (pa->memory.VmRSS < pb->memory.VmRSS);
+    return (pa->rss > pb->rss) - (pa->rss < pb->rss);
 }
 
 int cmpByVmRssDown(const void *a, const void *b) {
     const proc *pa = a;
     const proc *pb = b;
-    return (pa->memory.VmRSS < pb->memory.VmRSS) - (pa->memory.VmRSS > pb->memory.VmRSS);
+    return (pa->rss < pb->rss) - (pa->rss > pb->rss);
 }
 
 int cmpByVmSizeUp(const void *a, const void *b) {
     const proc *pa = a;
     const proc *pb = b;
-    return (pa->memory.VmSize > pb->memory.VmSize) - (pa->memory.VmSize < pb->memory.VmSize);
+    return (pa->vsize > pb->vsize) - (pa->vsize < pb->vsize);
 }
 
 int cmpByVmSizeDown(const void *a, const void *b) {
     const proc *pa = a;
     const proc *pb = b;
-    return (pa->memory.VmSize < pb->memory.VmSize) - (pa->memory.VmSize > pb->memory.VmSize);
+    return (pa->vsize < pb->vsize) - (pa->vsize > pb->vsize);
 }
 
 int cmpByMemoryPercentUp(const void *a, const void *b) {
@@ -96,5 +98,24 @@ int reallocPs(procList *pl) {
         return 0;
     }
 
+    return 0;
+}
+
+
+int field_u64(const char *s, uint64_t *out) {
+    if (!s || !*s) return -1;
+    char *end;
+    errno = 0;
+    *out = strtoumax(s, &end, 10);
+    if (errno || end == s || *end != '\0') return -1;
+    return 0;
+}
+
+int field_i64(const char *s, int64_t *out) {
+    if (!s || !*s) return -1;
+    char *end;
+    errno = 0;
+    *out = strtoimax(s, &end, 10);
+    if (errno || end == s || *end != '\0') return -1;
     return 0;
 }

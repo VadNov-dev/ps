@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
+#include <inttypes.h>
 #include "ps.h"
 
 int getAvailableProcs(procList *pl, options* opt);
@@ -67,9 +68,16 @@ int main(int argc, char **argv) {
     if(opt.flags & STRING_RESTRICTION) {
         outputLimit = opt.limits < psList.size ? opt.limits : psList.size;
     } 
-    printf("%-20s %10s %10s %10s %10s\n", "Name", "PID", "VmRSS(KB)", "VmSize(KB)", "mem %");
+    printf("%-20s, %10s %10s %10s %10s %10s %10s\n", "Name", "PID", "State", "VmRSS(KB)", "VmSize(KB)", "mem %", "CPU %");
     for(int i = 0; i<outputLimit; ++i){
-        printf("%-20.20s %10d %10ld %10ld %10.1f%%\n", psList.ps[i].name, psList.ps[i].pid, psList.ps[i].memory.VmRSS, psList.ps[i].memory.VmSize, psList.ps[i].memoryPercent);
+        printf("%-20.20s %10d %10c %10" PRId64 " %10" PRIu64 " %10.1f%% %10.1f%%\n",
+               psList.ps[i].comm,
+               psList.ps[i].pid,
+               psList.ps[i].state,
+               psList.ps[i].rss,   // int64_t
+               psList.ps[i].vsize, // uint64_t
+               psList.ps[i].memoryPercent,
+               psList.ps[i].cpuPercent);
     }
     free(psList.ps);
     return 0;
