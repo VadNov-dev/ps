@@ -10,6 +10,8 @@
 
 int reallocPs(procList *pl);
 void sort(procList* pl, options* opt);
+int field_u64(const char *s, uint64_t *out);
+int field_i64(const char *s, int64_t *out);
 
 static const char *procDir = "/proc";
 static const char *status = "stat";
@@ -21,8 +23,6 @@ static double uptimeSeconds = 0;
 static int isCorrectDirectory(char *path, char *name);
 static long getTotalMemory();
 static double getProcUptime();
-int field_u64(const char *s, uint64_t *out);
-int field_i64(const char *s, int64_t *out);
 
 static int getPsInfo(proc* ps) {
     char path[256];
@@ -78,13 +78,10 @@ static int getPsInfo(proc* ps) {
         return -1;
     }
     double totalTime = (double)(ps->utime + ps->stime);
-    double seconds = uptimeSeconds - (double)(ps->starttime / cpuFreq);
+    double seconds = uptimeSeconds - ((double)ps->starttime / (double)cpuFreq);
     if(seconds > 0) {
         ps->cpuPercent = 100 * (totalTime / cpuFreq) / seconds;
     } else {
-        ps->cpuPercent = 0;
-    }
-    if(ps->cpuPercent < 0 && seconds <= 0) {
         ps->cpuPercent = 0;
     }
 
@@ -151,14 +148,7 @@ int getAvailableProcs(procList *pl, options* opt) {
     return 0;
 }
 
-void sortAvailableProcs(procList* pl, options* opt) {
-    if(opt->sortMode == NOT_SORTED) {
-        return;
-    }
-    sort(pl, opt);
-}
-
-long getTotalMemory() {
+static long getTotalMemory() {
     char line[128];
     long totalMemory = -1;
     FILE* memInfoFile = fopen(memInfo, "r");
@@ -174,7 +164,7 @@ long getTotalMemory() {
     return totalMemory;
 }
 
-double getProcUptime() {
+static double getProcUptime() {
     char line[128];
     double uptimeSeconds = -1;
     FILE* uptimeFile = fopen(uptime, "r");
@@ -191,7 +181,7 @@ double getProcUptime() {
 }
 
 
-int isCorrectDirectory(char *path, char *name) {
+static int isCorrectDirectory(char *path, char *name) {
     char *end;
     strtol(name, &end, 10);
     if(*end != '\0' || end == name) {
