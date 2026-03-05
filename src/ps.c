@@ -6,6 +6,8 @@
 #include <err.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "ps.h"
 
 int reallocPs(procList *pl);
@@ -24,19 +26,29 @@ static int isCorrectDirectory(char *path, char *name);
 static long getTotalMemory();
 static double getProcUptime();
 
+static int readFile(const char *path, char *buffer, size_t size) {
+    int fd = open(path, O_RDONLY | __O_CLOEXEC );
+    if (fd < 0)
+        return -1;
+
+    ssize_t n = read(fd, buffer, size - 1); // оставляем место под '\0'
+    int saved = errno;
+    close(fd);
+    errno = saved;
+
+    if (n < 0)
+        return -1;
+    buffer[n] = '\0';
+    return n;
+}
+
 static int getPsInfo(proc* ps) {
     char path[256];
     snprintf(path, sizeof(path), "%s/%d/%s", procDir, ps->pid, status);
-    FILE* psFile = fopen(path, "r");
-    if(psFile == NULL) {
+    char buffer[1024];
+    if (readFile(path, buffer, sizeof(buffer)) < 0) {
         return -1;
     }
-    char buffer[4096];
-    if (!fgets(buffer, sizeof(buffer), psFile)) {
-        fclose(psFile);
-        return -1; 
-    }
-    fclose(psFile);
 
     char* commStart = strchr(buffer, '(');
     if (!commStart) {
@@ -55,15 +67,15 @@ static int getPsInfo(proc* ps) {
     ps->comm[commLength] = '\0';
     char* nextEntry = commEnd + 2;
 
-    char *token[51] = {0};
+    char *token[22] = {0};
     int i = 0;
     char *tok = strtok(nextEntry, " \n");
-    while (i < 50 && tok) {
+    while (i < 22 && tok) {
         token[i++] = tok;
         tok = strtok(NULL, " \n");
     }
 
-    for (int j = 0; j < 50; j++) {
+    for (int j = 0; j < 22; j++) {
         if (token[j] == NULL) {
             return -1;
         }
@@ -151,32 +163,24 @@ int getAvailableProcs(procList *pl, options* opt) {
 static long getTotalMemory() {
     char line[128];
     long totalMemory = -1;
-    FILE* memInfoFile = fopen(memInfo, "r");
-    if(memInfoFile == NULL) {
+    if(readFile(memInfo, line, sizeof(line)) < 0) {
         return -1;
     }
-    while(fgets(line, sizeof(line), memInfoFile)) {
-        if(sscanf(line, "MemTotal: %ld", &totalMemory) == 1 ) {
-            break;
-        }
+    if(sscanf(line, "MemTotal: %ld", &totalMemory) != 1 ) {
+        return -1;
     }
-    fclose(memInfoFile);
     return totalMemory;
 }
 
 static double getProcUptime() {
     char line[128];
     double uptimeSeconds = -1;
-    FILE* uptimeFile = fopen(uptime, "r");
-    if(uptimeFile == NULL) {
+    if(readFile(uptime, line, sizeof(line)) < 0) {
         return -1;
     }
-    while(fgets(line, sizeof(line), uptimeFile)) {
-        if(sscanf(line, "%lf", &uptimeSeconds) == 1 ) {
-            break;
-        }
+    if(sscanf(line, "%lf", &uptimeSeconds) != 1) {
+        return -1;
     }
-    fclose(uptimeFile);
     return uptimeSeconds;
 }
 
