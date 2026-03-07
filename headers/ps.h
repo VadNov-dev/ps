@@ -3,7 +3,8 @@
 #include <stdint.h>
 
 enum {
-    STRING_RESTRICTION = 1 << 1
+    STRING_RESTRICTION = 1 << 1,
+    SHOW_ALL = 1 << 2
 };
 
 

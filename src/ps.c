@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -27,7 +28,7 @@ static long getTotalMemory();
 static double getProcUptime();
 
 static int readFile(const char *path, char *buffer, size_t size) {
-    int fd = open(path, O_RDONLY | __O_CLOEXEC );
+    int fd = open(path, O_RDONLY | O_CLOEXEC );
     if (fd < 0)
         return -1;
 
