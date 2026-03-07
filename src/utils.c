@@ -11,12 +11,6 @@ int cmpByName(const void *a, const void *b) {
     return strcoll(pa->comm, pb->comm);
 }
 
-int cmpByPid(const void *a, const void *b) {
-    const proc *pa = a;
-    const proc *pb = b;
-    return (pa->pid > pb->pid) - (pa->pid < pb->pid);
-}
-
 int cmpByVmRssUp(const void *a, const void *b) {
     const proc *pa = a;
     const proc *pb = b;
@@ -57,9 +51,6 @@ void sort(procList* pl, options* opt) {
     switch (opt->sortMode) {
     case SORT_BY_NAME:
         qsort(pl->ps, pl->size, sizeof(proc), cmpByName);
-        break;
-    case SORT_BY_PID:
-        qsort(pl->ps, pl->size, sizeof(proc), cmpByPid);
         break;
     case SORT_UP_BY_VM_RSS:
         qsort(pl->ps, pl->size, sizeof(proc), cmpByVmRssUp);

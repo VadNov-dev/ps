@@ -9,7 +9,6 @@ enum {
 
 enum sortMode {
     SORT_BY_NAME,
-    SORT_BY_PID,
     SORT_UP_BY_VM_RSS,
     SORT_DOWN_BY_VM_RSS,
     SORT_UP_BY_VM_SIZE,
